@@ -1,0 +1,123 @@
+<body>
+  <div id="formSection">
+    <h2>Upload Your Face</h2>
+    <form id="mainForm" class="form">
+      <div class="wave-group">
+        <input required name="name" type="text" class="input">
+        <span class="bar"></span>
+        <label class="label">
+          <span class="label-char" style="--index: 0">N</span>
+          <span class="label-char" style="--index: 1">a</span>
+          <span class="label-char" style="--index: 2">m</span>
+          <span class="label-char" style="--index: 3">e</span>
+        </label>
+      </div>
+      <button id="startCam" type="button" class="btn2"><span class="spn2">Start Camera</span></button>
+      <button type="submit" class="btn2"><span class="spn2">Submit</span></button>
+    </form>
+    <div class="captured-images" id="formCapturedImages"></div>
+  </div>
+
+  <div id="cameraSection" style="display:none;">
+    <video id="video" autoplay muted playsinline></video>
+    <div id="camControls">
+      <button id="captureBtn" type="button" class="btn2"><span class="spn2">Capture</span></button>
+      <button id="stopCam" type="button" class="btn2"><span class="spn2">Close Camera</span></button>
+    </div>
+    <div class="captured-images" id="capturedImages"></div>
+  </div>
+
+  <div class="toast" id="toast">Toast message</div>
+
+  <script>
+    const video = document.getElementById("video");
+    const startBtn = document.getElementById("startCam");
+    const stopBtn = document.getElementById("stopCam");
+    const captureBtn = document.getElementById("captureBtn");
+    const cameraSection = document.getElementById("cameraSection");
+    const formSection = document.getElementById("formSection");
+    const toast = document.getElementById("toast");
+    const outputDiv = document.getElementById("capturedImages");
+    const formCapturedImages = document.getElementById("formCapturedImages");
+    let stream = null;
+    let captureCount = 0;
+    const capturePrompts = [
+      "Take front side of your face.",
+      "Turn left and capture your left profile.",
+      "Turn right and capture your right profile."
+    ];
+
+    function showToast(msg) {
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    async function setupCamera() {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      video.style.display = "block";
+      cameraSection.style.display = "block";
+      formSection.style.display = "none";
+      captureCount = 0;
+      showToast(capturePrompts[captureCount]);
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.style.display = "none";
+      cameraSection.style.display = "none";
+      formSection.style.display = "block";
+      formCapturedImages.innerHTML = outputDiv.innerHTML;
+      outputDiv.innerHTML = "";
+      showToast("Camera stopped.");
+    }
+
+    function captureFace() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const img = new Image();
+      img.src = canvas.toDataURL('image/png');
+      const container = document.createElement('div');
+      container.className = 'captured-container';
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.innerText = '×';
+      deleteBtn.onclick = () => container.remove();
+      container.appendChild(img);
+      container.appendChild(deleteBtn);
+      outputDiv.appendChild(container);
+      showToast("Snapshot captured!");
+
+      captureCount++;
+      if (captureCount < capturePrompts.length) {
+        showToast(capturePrompts[captureCount]);
+      }
+    }
+
+    startBtn.addEventListener("click", setupCamera);
+    stopBtn.addEventListener("click", stopCamera);
+    captureBtn.addEventListener("click", captureFace);
+  </script>
+</body>
+</html>
+
+
+
+
+  0%   { background-image: url('beautiful-nature-desktop-1920x1200-wallpaper-preview.jpg'); }
+      10%  { background-image: url('depositphotos_311586652-stock-photo-beautiful-moraine-lake-banff-national.jpg'); }
+      20%  { background-image: url('Beautiful-Wallpapers-Full-HD-Free-Download.jpg'); }
+      30%  { background-image: url('photo-1506104489822-562ca25152fe.jpg'); }
+      40%  { background-image: url('promo5.jpg'); }
+      50%  { background-image: url('promo6.jpg'); }
+      60%  { background-image: url('promo7.jpg'); }
+      70%  { background-image: url('promo8.jpg'); }
+      80%  { background-image: url('promo9.jpg'); }
+      90%  { background-image: url('promo10.jpg'); }
+      100% { background-image: url('promo1.jpg'); }

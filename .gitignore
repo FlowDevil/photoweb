@@ -1,0 +1,17 @@
+# Ignore Python virtual environment
+.venv/
+
+# Ignore face data and temporary files
+facedb/
+uploads/
+
+# Ignore all image/video files
+*.jpg
+*.jpeg
+*.png
+*.mp4
+
+# Python bytecode
+__pycache__/
+*.pyc
+

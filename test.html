@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DeepFace Test</title>
+</head>
+<body>
+  <h2>Upload 3 Face Images</h2>
+  <input type="text" id="name" placeholder="Enter Name"><br><br>
+  <input type="file" id="img1"><br><br>
+  <input type="file" id="img2"><br><br>
+  <input type="file" id="img3"><br><br>
+  <button onclick="submitImages()">Submit</button>
+
+  <pre id="response"></pre>
+
+  <script>
+    async function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    async function submitImages() {
+      const name = document.getElementById('name').value;
+      const files = [
+        document.getElementById('img1').files[0],
+        document.getElementById('img2').files[0],
+        document.getElementById('img3').files[0]
+      ];
+
+      if (files.some(f => !f)) {
+        alert("Please select 3 images.");
+        return;
+      }
+
+      const images = await Promise.all(files.map(file => toBase64(file)));
+
+      fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, images })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        document.getElementById("response").textContent = "Error occurred.";
+      });
+    }
+  </script>
+</body>
+</html>
