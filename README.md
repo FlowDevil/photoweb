@@ -1,0 +1,1 @@
+📷 Smart Face Recognition Web App A web-based face recognition system using python Flask, DeepFace, and HTML/CSS/JS. It captures images via webcam, compares them with a saved face database, and highlights matches. Useful for authentication, attendance, or identity verification systems.
