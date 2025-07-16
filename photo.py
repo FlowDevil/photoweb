@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from deepface import DeepFace
 import os
@@ -6,21 +6,20 @@ import base64
 import uuid
 import shutil
 import tempfile
+import time
+import zipfile
 
 app = Flask(__name__)
-
 CORS(app)
 
 DB_FOLDER = "facedb"
 UPLOAD_FOLDER = "uploads"
+ZIP_PATH = "uploads.zip"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def decode_base64_to_image_file(base64_img):
-    """
-    Decodes base64 string to a temporary image file and returns the path.
-    """
     try:
         header, encoded = base64_img.split(",", 1)
         img_data = base64.b64decode(encoded)
@@ -66,11 +65,9 @@ def upload_and_compare():
                 db_path=person_folder,
                 model_name="ArcFace",
                 enforce_detection=False,
-                threshold=0.6  # Adjust similarity threshold if needed
+                threshold=0.6
             )
             df = result[0]
-            print(f"Result DataFrame for image {temp_path}:\n", df)
-
             if not df.empty:
                 vote_count += 1
                 for i in range(len(df)):
@@ -79,7 +76,6 @@ def upload_and_compare():
         except Exception as e:
             print(f"DeepFace error on {temp_path}:", e)
 
-    # Cleanup temp files
     for file_path in temp_files:
         try:
             os.remove(file_path)
@@ -87,7 +83,12 @@ def upload_and_compare():
             pass
 
     if vote_count == 0:
+        time.sleep(3)
         return jsonify({"match": False, "message": "No match found."}), 404
+
+    # Clear previous uploads
+    shutil.rmtree(UPLOAD_FOLDER)
+    os.makedirs(UPLOAD_FOLDER)
 
     copied_files = []
     for path in matched_images:
@@ -99,12 +100,38 @@ def upload_and_compare():
         except Exception as e:
             print(f"Error copying matched image: {path}", e)
 
+    # Create zip
+    with zipfile.ZipFile(ZIP_PATH, 'w') as zipf:
+        for file_path in copied_files:
+            zipf.write(file_path, arcname=os.path.basename(file_path))
+
     return jsonify({
         "match": True,
         "person": person_name,
         "matchedCount": vote_count,
-        "matchedImages": copied_files
+        "zipAvailable": True
     })
+
+
+@app.route("/download", methods=["GET"])
+def download_zip():
+    if os.path.exists(ZIP_PATH):
+        return send_file(ZIP_PATH, as_attachment=True)
+    else:
+        return jsonify({"message": "ZIP file not found."}), 404
+
+
+@app.route("/cleanup", methods=["POST"])
+def cleanup():
+    try:
+        if os.path.exists(UPLOAD_FOLDER):
+            shutil.rmtree(UPLOAD_FOLDER)
+        if os.path.exists(ZIP_PATH):
+            os.remove(ZIP_PATH)
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        return jsonify({"message": "Cleanup successful."})
+    except Exception as e:
+        return jsonify({"message": f"Cleanup error: {str(e)}"}), 500
 
 
 if __name__ == "__main__":

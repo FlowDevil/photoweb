@@ -273,72 +273,172 @@
       color: #121212;
     }
 
-    /* ✅ Responsive adjustments */
+.loader {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.loading-text {
+  color: white;
+  font-size: 16pt;
+  font-weight: 600;
+}
+
+.dot {
+  margin-left: 3px;
+  animation: blink 1.5s infinite;
+}
+.dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.loading-bar-background {
+  --height: 30px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 5px;
+  width: 200px;
+  height: var(--height);
+  background-color: #212121;
+  box-shadow: #0c0c0c -2px 2px 4px 0px inset;
+  border-radius: calc(var(--height) / 2);
+}
+
+.loading-bar {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  --height: 20px;
+  width: 0%;
+  height: var(--height);
+  overflow: hidden;
+  background: linear-gradient(
+    0deg,
+    rgb(0, 200, 100) 0%,
+    rgb(120, 255, 120) 100%
+  );
+  border-radius: calc(var(--height) / 2);
+  animation: loading 4s ease-out infinite;
+}
+
+.white-bars-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.white-bar {
+  background: linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  width: 10px;
+  height: 45px;
+  opacity: 0.3;
+  transform: rotate(45deg);
+}
+
+@keyframes loading {
+  0% {
+    width: 0;
+  }
+  80% {
+    width: 100%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
     @media (max-width: 768px) {
-      .form {
-        width: 90%;
-        padding: 20px;
-      }
-
-      .wave-group .input,
-      .wave-group .bar {
-        width: 90%;
-      }
-
-      #video {
-        width: 95%;
-      }
-
-      .btn2, .btn3 {
-        width: 90%;
-        font-size: 16px;
-        padding: 12px 20px;
-      }
-
-      .captured-container img {
-        width: 140px;
-      }
-
-      .toast {
-        right: 10px;
-        left: 10px;
-        font-size: 14px;
-        width: auto;
-      }
+      .form { width: 90%; padding: 20px; }
+      .wave-group .input, .wave-group .bar { width: 90%; }
+      #video { width: 95%; }
+      .btn2, .btn3 { width: 90%; font-size: 16px; padding: 12px 20px; }
+      .captured-container img { width: 140px; }
+      .toast { right: 10px; left: 10px; font-size: 14px; width: auto; }
     }
   </style>
 </head>
 <body>
 
-  <div id="formSection">
-    <h2>Upload Your Face</h2>
-    <form id="mainForm" class="form">
-      <label class="wave-group">
-        <input required name="name" type="text" class="input">
-        <span class="bar"></span>
-        <span class="label">
-          <span class="label-char" style="--index: 0">N</span>
-          <span class="label-char" style="--index: 1">a</span>
-          <span class="label-char" style="--index: 2">m</span>
-          <span class="label-char" style="--index: 3">e</span>
-        </span>
-      </label>
-      <button id="startCam" type="button" class="btn2">Start Camera</button>
-      <button type="submit" class="btn2">Submit</button>
-    </form>
-    <div class="captured-images" id="formCapturedImages"></div>
-  </div>
+<div id="formSection">
+  <h2>Upload Your Face</h2>
+  <form id="mainForm" class="form">
+    <label class="wave-group">
+      <input required name="name" type="text" class="input">
+      <span class="bar"></span>
+      <span class="label">
+        <span class="label-char" style="--index: 0">N</span>
+        <span class="label-char" style="--index: 1">a</span>
+        <span class="label-char" style="--index: 2">m</span>
+        <span class="label-char" style="--index: 3">e</span>
+      </span>
+    </label>
+    <button id="startCam" type="button" class="btn2">Start Camera</button>
+    <button type="submit" class="btn2">Submit</button>
+  </form>
+  <div class="captured-images" id="formCapturedImages"></div>
+</div>
 
-  <div id="cameraSection" style="display:none;">
-    <video id="video" autoplay muted playsinline></video>
-    <div id="camControls">
-      <button id="captureBtn" type="button" class="btn3">Capture</button>
-      <button id="stopCam" type="button" class="btn3">Close Camera</button>
+<div id="cameraSection" style="display:none;">
+  <video id="video" autoplay muted playsinline></video>
+  <div id="camControls">
+    <button id="captureBtn" type="button" class="btn3">Capture</button>
+    <button id="stopCam" type="button" class="btn3">Close Camera</button>
+  </div>
+  <div class="captured-images" id="capturedImages"></div>
+</div>
+
+<!-- Loader from Uiverse.io, customized -->
+<div class="loader" id="loader" style="display: none;">
+  <div class="loading-text">
+    Loading<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+  </div>
+  <div class="loading-bar-background">
+    <div class="loading-bar">
+      <div class="white-bars-container">
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+        <div class="white-bar"></div>
+      </div>
     </div>
-    <div class="captured-images" id="capturedImages"></div>
   </div>
+</div>
 
-  <div class="toast" id="toast">Toast message</div>
+
+<div class="toast" id="toast">Toast message</div>
 
 <script>
   const video = document.getElementById("video");
@@ -410,15 +510,19 @@
       showToast("You can only capture 3 images.");
       return;
     }
+
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
     const img = new Image();
     img.src = canvas.toDataURL('image/png');
+
     const container = document.createElement('div');
     container.className = 'captured-container';
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-btn';
     deleteBtn.innerText = '×';
@@ -427,43 +531,89 @@
       captureCount--;
       showToast("Image removed.");
     };
+
     container.appendChild(img);
     container.appendChild(deleteBtn);
     outputDiv.appendChild(container);
+
     showToast("Snapshot captured!");
     captureCount++;
+
     if (captureCount < capturePrompts.length) {
       showToast(capturePrompts[captureCount]);
     }
   }
 
+  function showDownloadAndDoneButtons() {
+    const btnContainer = document.createElement("div");
+    btnContainer.style.marginTop = "30px";
+
+    const downloadBtn = document.createElement("button");
+    downloadBtn.className = "btn3";
+    downloadBtn.textContent = "Download ZIP";
+    downloadBtn.onclick = () => {
+      window.open("http://127.0.0.1:5000/download", "_blank");
+    };
+
+    const doneBtn = document.createElement("button");
+    doneBtn.className = "btn3";
+    doneBtn.textContent = "Done";
+    doneBtn.onclick = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/cleanup", {
+          method: "POST"
+        });
+        const data = await res.json();
+        showToast("✅ Cleanup completed.");
+        window.location.reload();
+      } catch (err) {
+        showToast("❌ Cleanup failed.");
+        console.error(err);
+      }
+    };
+
+    btnContainer.appendChild(downloadBtn);
+    btnContainer.appendChild(doneBtn);
+    document.body.appendChild(btnContainer);
+  }
+
   mainForm.addEventListener("submit", async function (e) {
     e.preventDefault();
+
     const nameInput = mainForm.querySelector('input[name="name"]').value.trim();
     const images = [];
-    document.querySelectorAll("#formCapturedImages img").forEach(img => {
-      images.push(img.src);
-    });
+    document.querySelectorAll("#formCapturedImages img").forEach(img => images.push(img.src));
+
     if (images.length < 3 || !nameInput) {
       showToast("Name and 3 images are required.");
       return;
     }
-    const apiUrl = "http://127.0.0.1:5000/upload";
+
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("formSection").style.display = "none";
+
     try {
-      const res = await fetch(apiUrl, {
+      const res = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: nameInput, images: images })
       });
+
       const result = await res.json();
-      if (res.ok) {
+      document.getElementById("loader").style.display = "none";
+
+      if (res.ok && result.match) {
         showToast(`✅ ${result.matchedCount} images matched!`);
+        showDownloadAndDoneButtons();
       } else {
-        showToast(`❌ Error: ${result.message}`);
+        showToast(`❌ ${result.message}`);
+        document.getElementById("formSection").style.display = "block";
       }
     } catch (error) {
       console.error("Upload error:", error);
       showToast("❌ Failed to connect to server.");
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("formSection").style.display = "block";
     }
   });
 
