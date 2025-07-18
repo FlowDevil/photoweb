@@ -2,3 +2,4 @@ flask
 deepface
 pybind11
 numpy<2
+tf-keras
