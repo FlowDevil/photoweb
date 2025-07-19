@@ -135,7 +135,7 @@ def cleanup():
 
 @app.route("/")
 def serve_index():
-    return send_file(os.path.join(app.static_folder, "index.html"))
+    return send_file(os.path.join(app.static_folder, "photo.html"))
 
 @app.route("/<path:path>")
 def serve_static_files(path):
