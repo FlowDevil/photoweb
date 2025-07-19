@@ -560,7 +560,7 @@
     doneBtn.textContent = "Done";
     doneBtn.onclick = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:5000/cleanup", {
+        const res = await fetch("/cleanup", {
           method: "POST"
         });
         const data = await res.json();
@@ -593,7 +593,7 @@
     document.getElementById("formSection").style.display = "none";
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/upload", {
+      const res = await fetch("/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: nameInput, images: images })
