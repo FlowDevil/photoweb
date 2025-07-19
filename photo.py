@@ -9,7 +9,7 @@ import tempfile
 import time
 import zipfile
 
-app = Flask(__name__)
+app = Flask(__name__,static_folder="static")
 CORS(app)
 
 DB_FOLDER = "facedb"
@@ -132,6 +132,15 @@ def cleanup():
         return jsonify({"message": "Cleanup successful."})
     except Exception as e:
         return jsonify({"message": f"Cleanup error: {str(e)}"}), 500
+
+@app.route("/")
+def serve_index():
+    return send_file(os.path.join(app.static_folder, "index.html"))
+
+@app.route("/<path:path>")
+def serve_static_files(path):
+    return send_from_directory(app.static_folder, path)
+
 
 
 if __name__ == "__main__":
