@@ -7,14 +7,15 @@ import uuid
 import shutil
 import tempfile
 import time
-import zipfile
+
 
 app = Flask(__name__,static_folder="static")
 CORS(app)
 
 DB_FOLDER = "facedb"
-UPLOAD_FOLDER = "uploads"
-ZIP_PATH = "uploads.zip"
+UPLOAD_FOLDER = './static/upload'
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -65,7 +66,8 @@ def upload_and_compare():
                 db_path=person_folder,
                 model_name="ArcFace",
                 enforce_detection=False,
-                threshold=0.6
+                threshold=0.6,
+                refresh_database=False
             )
             df = result[0]
             if not df.empty:
@@ -87,8 +89,8 @@ def upload_and_compare():
         return jsonify({"match": False, "message": "No match found."}), 404
 
     # Clear previous uploads
-    shutil.rmtree(UPLOAD_FOLDER)
-    os.makedirs(UPLOAD_FOLDER)
+    shutil.rmtree(UPLOAD_FOLDER, ignore_errors=True)
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
     copied_files = []
     for path in matched_images:
@@ -100,26 +102,21 @@ def upload_and_compare():
         except Exception as e:
             print(f"Error copying matched image: {path}", e)
 
-    # Create zip
-    with zipfile.ZipFile(ZIP_PATH, 'w') as zipf:
-        for file_path in copied_files:
-            zipf.write(file_path, arcname=os.path.basename(file_path))
-
     return jsonify({
         "match": True,
         "person": person_name,
         "matchedCount": vote_count,
-        "zipAvailable": True
+        "matchedImages": copied_files
     })
 
-
-@app.route("/download", methods=["GET"])
-def download_zip():
-    if os.path.exists(ZIP_PATH):
-        return send_file(ZIP_PATH, as_attachment=True)
-    else:
-        return jsonify({"message": "ZIP file not found."}), 404
-
+from flask import send_from_directory
+@app.route('/download/<filename>')
+def download_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename,
+        as_attachment=True  # ⬅️ This tells the browser to download
+    )
 
 @app.route("/cleanup", methods=["POST"])
 def cleanup():
