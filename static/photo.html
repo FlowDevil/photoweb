@@ -382,6 +382,53 @@
       .captured-container img { width: 140px; }
       .toast { right: 10px; left: 10px; font-size: 14px; width: auto; }
     }
+
+
+.download-btn {
+  margin-bottom: 8px;
+  padding: 6px 14px;
+  background-color: #28a745;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.download-btn:hover {
+  background-color: #218838;
+}
+
+
+    .image-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .image-container {
+    position: relative;
+    max-width: 100%;
+    border: 2px solid transparent;
+    transition: border 0.3s ease;
+  }
+
+  .image-container.selected {
+    border: 2px solid #007BFF;
+  }
+
+  .image-container img {
+    width: 100%;
+    height: auto;
+    max-width: 300px;
+    display: block;
+  }
+
+  img.selected {
+  outline: 3px solid #00f;
+  opacity: 0.8;
+}
+
   </style>
 </head>
 <body>
@@ -437,10 +484,23 @@
   </div>
 </div>
 
+<section id="imageSection" style="display: none;">
+  <div style="margin-bottom: 10px;">
+    <button class="btn2" id="selectAllBtn">Select All</button>
+    <button class="btn2" id="deselectAllBtn">Deselect All</button>
+    <button class="btn2" id="downloadAllBtn">Download Selected</button>
+    <button class="btn2" id="doneBtn">Done</button>
+  </div>
+  <div id="imageContainer" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+</section>
+
+
 
 <div class="toast" id="toast">Toast message</div>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const mainForm = document.getElementById("mainForm");
   const video = document.getElementById("video");
   const startBtn = document.getElementById("startCam");
   const stopBtn = document.getElementById("stopCam");
@@ -450,39 +510,49 @@
   const toast = document.getElementById("toast");
   const outputDiv = document.getElementById("capturedImages");
   const formCapturedImages = document.getElementById("formCapturedImages");
-  const mainForm = document.getElementById("mainForm");
+  const imageSection = document.getElementById("imageSection");
+  const imageContainer = document.getElementById("imageContainer");
+  const selectAllBtn = document.getElementById("selectAllBtn");
+  const deselectAllBtn = document.getElementById("deselectAllBtn");
+  const downloadAllBtn = document.getElementById("downloadAllBtn");
+  const doneBtn = document.getElementById("doneBtn");
+  const loader = document.getElementById("loader");
 
   let stream = null;
   let captureCount = 0;
+
   const capturePrompts = [
-    "Take front side of your face.",
-    "Turn left and capture your left profile.",
-    "Turn right and capture your right profile."
+    "📸 Face front and click Capture.",
+    "↩️ Turn left and click Capture.",
+    "↪️ Turn right and click Capture."
   ];
 
-  function showToast(msg) {
-    toast.innerText = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3500);
+  // === TOAST ===
+  function showToast(message) {
+    toast.textContent = message;
+    toast.style.display = "block";
+    setTimeout(() => {
+      toast.style.display = "none";
+    }, 3000);
   }
 
+  // === CAMERA ===
   async function setupCamera() {
     try {
-      showToast("Starting camera...");
+      showToast("📷 Starting camera...");
       stream = await navigator.mediaDevices.getUserMedia({ video: true });
       video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        video.play();
-        video.style.display = "block";
-        cameraSection.style.display = "block";
-        formSection.style.display = "none";
-        captureCount = 0;
-        outputDiv.innerHTML = "";
-        showToast(capturePrompts[captureCount]);
-      };
+      await video.play();
+
+      video.style.display = "block";
+      cameraSection.style.display = "block";
+      formSection.style.display = "none";
+      captureCount = 0;
+      outputDiv.innerHTML = "";
+      showToast(capturePrompts[captureCount]);
     } catch (err) {
-      showToast("Camera access denied or not available.");
-      console.error("Camera error:", err);
+      showToast("❌ Camera not accessible.");
+      console.error(err);
     }
   }
 
@@ -493,134 +563,218 @@
     video.style.display = "none";
     cameraSection.style.display = "none";
     formSection.style.display = "block";
+
     formCapturedImages.innerHTML = outputDiv.innerHTML;
     outputDiv.innerHTML = "";
-    formCapturedImages.querySelectorAll('.captured-container .delete-btn').forEach(btn => {
+
+    formCapturedImages.querySelectorAll(".captured-container .delete-btn").forEach(btn => {
       btn.onclick = () => {
         btn.parentElement.remove();
         captureCount--;
-        showToast("Image removed.");
+        showToast("🗑️ Image removed.");
       };
     });
-    showToast("Camera stopped.");
+
+    showToast("📴 Camera stopped.");
   }
 
+  // === CAPTURE ===
   function captureFace() {
     if (captureCount >= 3) {
-      showToast("You can only capture 3 images.");
+      showToast("⚠️ Max 3 images allowed.");
       return;
     }
 
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const img = new Image();
-    img.src = canvas.toDataURL('image/png');
+    img.src = canvas.toDataURL("image/png");
 
-    const container = document.createElement('div');
-    container.className = 'captured-container';
+    const container = document.createElement("div");
+    container.className = "captured-container";
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.innerText = '×';
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.textContent = "×";
     deleteBtn.onclick = () => {
       container.remove();
       captureCount--;
-      showToast("Image removed.");
+      showToast("🗑️ Image removed.");
     };
 
     container.appendChild(img);
     container.appendChild(deleteBtn);
     outputDiv.appendChild(container);
 
-    showToast("Snapshot captured!");
     captureCount++;
-
     if (captureCount < capturePrompts.length) {
       showToast(capturePrompts[captureCount]);
+    } else {
+      showToast("✅ All captures done.");
     }
   }
 
-  function showDownloadAndDoneButtons() {
-    const btnContainer = document.createElement("div");
-    btnContainer.style.marginTop = "30px";
-
-    const downloadBtn = document.createElement("button");
-    downloadBtn.className = "btn3";
-    downloadBtn.textContent = "Download ZIP";
-    downloadBtn.onclick = () => {
-      window.open("http://127.0.0.1:5000/download", "_blank");
-    };
-
-    const doneBtn = document.createElement("button");
-    doneBtn.className = "btn3";
-    doneBtn.textContent = "Done";
-    doneBtn.onclick = async () => {
-      try {
-        const res = await fetch("/cleanup", {
-          method: "POST"
-        });
-        const data = await res.json();
-        showToast("✅ Cleanup completed.");
-        window.location.reload();
-      } catch (err) {
-        showToast("❌ Cleanup failed.");
-        console.error(err);
-      }
-    };
-
-    btnContainer.appendChild(downloadBtn);
-    btnContainer.appendChild(doneBtn);
-    document.body.appendChild(btnContainer);
-  }
-
-  mainForm.addEventListener("submit", async function (e) {
+  // === FORM SUBMIT ===
+  mainForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const nameInput = mainForm.querySelector('input[name="name"]').value.trim();
-    const images = [];
-    document.querySelectorAll("#formCapturedImages img").forEach(img => images.push(img.src));
+    const name = mainForm.querySelector('input[name="name"]').value.trim();
+    const images = Array.from(formCapturedImages.querySelectorAll("img")).map(img => img.src);
 
-    if (images.length < 3 || !nameInput) {
-      showToast("Name and 3 images are required.");
+    if (!name || images.length < 3) {
+      showToast("❗ Name and 3 captures required.");
       return;
     }
 
-    document.getElementById("loader").style.display = "block";
-    document.getElementById("formSection").style.display = "none";
+    loader.style.display = "block";
+    formSection.style.display = "none";
 
     try {
-      const res = await fetch("/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nameInput, images: images })
+      const res = await fetch('http://127.0.0.1:5000/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, images })
       });
 
       const result = await res.json();
-      document.getElementById("loader").style.display = "none";
+      loader.style.display = "none";
 
-      if (res.ok && result.match) {
-        showToast(`✅ ${result.matchedCount} images matched!`);
-        showDownloadAndDoneButtons();
+      if (res.ok && result.matchedImages?.length) {
+        showToast(`✅ ${result.matchedImages.length} matches found!`);
+        showResults(result.matchedImages);
       } else {
-        showToast(`❌ ${result.message}`);
-        document.getElementById("formSection").style.display = "block";
+        showToast("❌ No matches found.");
+        formSection.style.display = "block";
       }
-    } catch (error) {
-      console.error("Upload error:", error);
-      showToast("❌ Failed to connect to server.");
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("formSection").style.display = "block";
+    } catch (err) {
+      console.error(err);
+      showToast("❌ Server error.");
+      loader.style.display = "none";
+      formSection.style.display = "block";
     }
   });
 
-  startBtn.addEventListener("click", setupCamera);
-  stopBtn.addEventListener("click", stopCamera);
-  captureBtn.addEventListener("click", captureFace);
+  // === SHOW MATCHED IMAGES ===
+   function showResults(images) {
+  document.getElementById("imageSection").style.display = "block";
+  imageSection.scrollIntoView({ behavior: "smooth" });
+  imageContainer.innerHTML = "";
+
+  images.forEach((src, i) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "image-wrapper";
+    wrapper.style.position = "relative";
+    wrapper.style.margin = "10px";
+    wrapper.style.display = "inline-block";
+    wrapper.style.border = "1px solid #ccc";
+    wrapper.style.padding = "10px";
+    wrapper.style.borderRadius = "10px";
+    wrapper.style.textAlign = "center";
+    wrapper.style.width = "200px";
+    wrapper.style.backgroundColor = "#f9f9f9";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "image-checkbox";
+    checkbox.dataset.src = `/static/upload/${src}`;
+
+    const img = document.createElement("img");
+    img.src = `static/upload/${src}`;
+    img.alt = `Matched Image ${i + 1}`;
+    img.className = "result-image";
+    img.style.width = "100%";
+    img.style.borderRadius = "10px";
+    img.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+    img.style.display = "block";
+    img.style.cursor = "pointer";
+
+    // 🔽 Download on image click
+    img.addEventListener("click", () => {
+      const link = document.createElement("a");
+      link.href = img.src;
+      link.download = src;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    const downloadBtn = document.createElement("a");
+    downloadBtn.href = `http://localhost/photoweb/static/upload/${src}`; //A4.jpg
+    downloadBtn.download = src;
+    downloadBtn.textContent = "⬇️ Download";
+    downloadBtn.className = "download-btn";
+
+    // Styling
+    downloadBtn.style.display = "block";
+    downloadBtn.style.marginTop = "8px";
+    downloadBtn.style.background = "#4CAF50";
+    downloadBtn.style.color = "white";
+    downloadBtn.style.padding = "6px 10px";
+    downloadBtn.style.borderRadius = "6px";
+    downloadBtn.style.textDecoration = "none";
+    downloadBtn.style.fontSize = "14px";
+    downloadBtn.style.cursor = "pointer";
+
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(img);
+    wrapper.appendChild(downloadBtn);
+
+    imageContainer.appendChild(wrapper);
+  });
+}
+
+
+
+  // === IMAGE SELECTION CONTROLS ===
+  selectAllBtn.onclick = () => {
+    document.querySelectorAll(".image-checkbox").forEach(cb => cb.checked = true);
+  };
+
+  deselectAllBtn.onclick = () => {
+    document.querySelectorAll(".image-checkbox").forEach(cb => cb.checked = false);
+  };
+
+  downloadAllBtn.onclick = async () => {
+    const selected = document.querySelectorAll(".image-checkbox:checked");
+    if (!selected.length) return showToast("⚠️ No images selected.");
+
+    for (const cb of selected) {
+      const url = cb.dataset.src;
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = url.split("/").pop();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(objectUrl);
+      } catch (err) {
+        console.error("Error downloading:", url, err);
+        showToast("❌ Error downloading one of the images.");
+      }
+    }
+  };
+
+  doneBtn.onclick = () => {
+    window.location.reload();
+  };
+
+  // === BUTTON HANDLERS ===
+  startBtn.onclick = setupCamera;
+  stopBtn.onclick = stopCamera;
+  captureBtn.onclick = captureFace;
+});
 </script>
+
+
 
 </body>
 </html>
