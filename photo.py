@@ -19,6 +19,25 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+def download_matched_images_from_supabase(bucket_name: str, matched_paths: list, local_dir: str):
+    os.makedirs(local_dir, exist_ok=True)
+    downloaded_files = []
+
+    for path in matched_paths:
+        filename = os.path.basename(path)
+        signed_url_data = supabase.storage.from_(bucket_name).create_signed_url(path, 60)
+        signed_url = signed_url_data.get("signedURL")
+
+        if signed_url:
+            response = requests.get(signed_url)
+            local_path = os.path.join(local_dir, filename)
+            with open(local_path, "wb") as f:
+                f.write(response.content)
+            downloaded_files.append(local_path)
+        else:
+            print(f"Failed to get signed URL for {path}")
+    return downloaded_files
+
 
 def decode_base64_to_image_file(base64_img):
     try:
@@ -73,7 +92,9 @@ def upload_and_compare():
             if not df.empty:
                 vote_count += 1
                 for i in range(len(df)):
-                    matched_images.add(df.iloc[i]["identity"])
+                    full_path = df.iloc[i]["identity"]
+                    filename = os.path.basename(full_path)
+                    matched_images.add(filename)
 
         except Exception as e:
             print(f"DeepFace error on {temp_path}:", e)
@@ -93,12 +114,10 @@ def upload_and_compare():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
     copied_files = []
-    for path in matched_images:
-        try:
-            filename = os.path.basename(path)
-            dest_path = os.path.join(UPLOAD_FOLDER, filename)
-            shutil.copy2(path, dest_path)
-            copied_files.append(dest_path)
+    try:
+        bucket_name = "saudfcd"
+        # Download only matched images
+        copied_files = download_matched_images_from_supabase(bucket_name, matched_images, UPLOAD_FOLDER)
         except Exception as e:
             print(f"Error copying matched image: {path}", e)
 
@@ -106,7 +125,7 @@ def upload_and_compare():
         "match": True,
         "person": person_name,
         "matchedCount": vote_count,
-        "matchedImages": copied_files
+        "matchedImages": [os.path.basename(p) for p in copied_files]
     })
 
 from flask import send_from_directory
